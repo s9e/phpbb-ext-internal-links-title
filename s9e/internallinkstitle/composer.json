@@ -1,0 +1,19 @@
+{
+	"name": "s9e/internallinkstitle",
+	"type": "phpbb-extension",
+	"description": "Replaces internal links to topic titles.",
+	"homepage": "https://github.com/s9e/phpbb-ext-internal-links-title/",
+	"version": "1.0.0",
+	"keywords": ["phpbb"],
+	"license": "MIT",
+	"require": {
+		"php": ">=7.3.1"
+	},
+	"authors": [{ "name": "JoshyPHP" }],
+	"extra": {
+		"display-name": "s9e/internal-links-title",
+		"soft-require": {
+			"phpbb/phpbb": "3.3.0"
+		}
+	}
+}

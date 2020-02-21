@@ -1,0 +1,16 @@
+services:
+  s9e.internallinkstitle.helper:
+    class: s9e\internallinkstitle\helper
+    arguments:
+      - '@auth'
+      - '@config'
+      - '@dbal.conn.driver'
+      - '%tables.posts%'
+      - '%tables.topics%'
+
+  s9e.internallinkstitle.listener:
+    class: s9e\internallinkstitle\listener
+    arguments:
+      - '@s9e.internallinkstitle.helper'
+    tags:
+      - { name: event.listener }
