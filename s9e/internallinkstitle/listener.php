@@ -8,9 +8,6 @@
 namespace s9e\internallinkstitle;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use phpbb\config\config;
-use phpbb\db\driver\driver_interface;
-use s9e\TextFormatter\Parser\Tag;
 
 class listener implements EventSubscriberInterface
 {
@@ -24,10 +21,15 @@ class listener implements EventSubscriberInterface
 	public static function getSubscribedEvents()
 	{
 		return [
-			'core.posting_modify_post_data'           => 'onPosting',
 			'core.text_formatter_s9e_configure_after' => 'onConfigure',
+			'core.text_formatter_s9e_parse_after'     => 'afterParse',
 			'core.text_formatter_s9e_parser_setup'    => 'onParserSetup'
 		];
+	}
+
+	public function afterParse($event)
+	{
+		$event['xml'] = $this->helper->replaceEncodedLinkText($event['xml']);
 	}
 
 	public function onConfigure($event)
@@ -37,40 +39,12 @@ class listener implements EventSubscriberInterface
 			return;
 		}
 
-		$tag = $event['configurator']->tags['LINK_TEXT'];
-		if (!isset($tag->attributes['type']))
-		{
-			$type = $tag->attributes->add('type');
-			$type->filterChain->append('#identifier');
-			$type->required = false;
-		}
-
-		$tag->filterChain->prepend($this->helper->getFilter());
+		$event['configurator']->tags['LINK_TEXT']->attributes['text']->filterChain
+			->prepend($this->helper->getFilter());
 	}
 
 	public function onParserSetup($event)
 	{
 		$event['parser']->get_parser()->registeredVars['s9e.internallinkstitle.helper'] = $this->helper;
-	}
-
-	public function onPosting($event)
-	{
-		if ($event['mode'] !== 'quote')
-		{
-			return;
-		}
-
-		$old = $event['post_data']['post_text'];
-		$new = preg_replace(
-			'((<URL(?= )[^>]* url="([^"]++)"[^>]*>)<LINK_TEXT text="([^"]++)" type="internal">[^<]++</LINK_TEXT></URL>)',
-			'$1<s>[url=$2]</s>$3<e>[/url]</e></URL>',
-			$old
-		);
-		if ($new !== $old)
-		{
-			$data               = $event['post_data'];
-			$data['post_text']  = $new;
-			$event['post_data'] = $data;
-		}
 	}
 }

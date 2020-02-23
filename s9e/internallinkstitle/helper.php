@@ -10,17 +10,16 @@ namespace s9e\internallinkstitle;
 use phpbb\auth\auth;
 use phpbb\config\config;
 use phpbb\db\driver\driver_interface;
-use s9e\TextFormatter\Parser\Tag;
+use s9e\TextFormatter\Utils;
 
 class helper
 {
 	protected $auth;
 	protected $db;
-	protected $postCache = [];
 	protected $postsTable;
 	protected $regexp;
-	protected $topicCache = [];
 	protected $topicsTable;
+	protected $uniqid;
 
 	public function __construct(auth $auth, config $config, driver_interface $db, string $postsTable, string $topicsTable)
 	{
@@ -34,41 +33,41 @@ class helper
 
 		$this->postsTable  = $postsTable;
 		$this->topicsTable = $topicsTable;
+		$this->uniqid      = uniqid('');
+	}
+
+	public static function filterLinkText(string $text, self $helper): string
+	{
+		$title = $helper->getTitleByUrl($text);
+
+		return ($title === '') ? $text : $helper->encode($title);
 	}
 
 	public function getFilter(): string
 	{
-		return __CLASS__ . '::replaceLinkText($tag, $s9e.internallinkstitle.helper)';
+		return __CLASS__ . '::filterLinkText($attrValue, $s9e.internallinkstitle.helper)';
 	}
 
-	public static function replaceLinkText(Tag $tag, self $helper): void
+	public function replaceEncodedLinkText(string $xml): string
 	{
-		$title = $helper->getTitleByUrl($tag->getAttribute('text'));
-		if ($title > '')
-		{
-			$tag->setAttribute('text', $title);
-			$tag->setAttribute('type', 'internal');
-		}
+		return preg_replace_callback(
+			'(<URL(?= )[^>]* url="([^"]++)"[^>]*>\\K<LINK_TEXT(?= )[^>]* text="' . $this->uniqid . ':([0-9a-f]++)"[^>]*>[^<]++</LINK_TEXT>(?=</URL>))',
+			function ($m)
+			{
+				return '<s>[url=' . $m[1] . ']</s>' . self::escape(hex2bin($m[2])) . '<e>[/url]</e>';
+			},
+			$xml
+		);
 	}
 
-	protected function getCachedPostData(int $postId): array
+	protected function encode(string $text): string
 	{
-		if (!isset($this->postCache[$postId]))
-		{
-			$this->postCache[$postId] = $this->getPostData($postId);
-		}
-
-		return $this->postCache[$postId];
+		return $this->uniqid . ':' . bin2hex($text);
 	}
 
-	protected function getCachedTopicData(int $topicId): array
+	protected static function escape(string $text): string
 	{
-		if (!isset($this->topicCache[$topicId]))
-		{
-			$this->topicCache[$topicId] = $this->getTopicData($topicId);
-		}
-
-		return $this->topicCache[$topicId];
+		return Utils::encodeUnicodeSupplementaryCharacters(htmlentities($text, ENT_DISALLOWED | ENT_IGNORE | ENT_NOQUOTES | ENT_XML1, 'utf-8'));
 	}
 
 	protected function getPostData(int $postId): array
@@ -97,7 +96,7 @@ class helper
 
 	protected function getTitleByPostId(int $postId): string
 	{
-		$row = $this->getCachedPostData($postId);
+		$row = $this->getPostData($postId);
 		if (empty($row))
 		{
 			return '';
@@ -114,7 +113,7 @@ class helper
 
 	protected function getTitleByTopicId(int $topicId): string
 	{
-		$row = $this->getCachedTopicData($topicId);
+		$row = $this->getTopicData($topicId);
 		if (empty($row))
 		{
 			return '';
