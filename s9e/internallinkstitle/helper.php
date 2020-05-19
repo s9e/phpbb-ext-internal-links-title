@@ -51,7 +51,7 @@ class helper
 	public function replaceEncodedLinkText(string $xml): string
 	{
 		return preg_replace_callback(
-			'(<URL(?= )[^>]* url="([^"]++)"[^>]*>\\K<LINK_TEXT(?= )[^>]* text="' . $this->uniqid . ':([0-9a-f]++)"[^>]*>[^<]++</LINK_TEXT>(?=</URL>))',
+			'(<URL(?: [^=]++="[^"]*+")*? url="([^"]++)"[^>]*+>\\K<LINK_TEXT(?: [^=]++="[^"]*+")*? text="' . $this->uniqid . ':([0-9a-f]++)"[^>]*>[^<]++</LINK_TEXT>(?=</URL>))',
 			function ($m)
 			{
 				return '<s>[url=' . $m[1] . ']</s>' . self::escape(hex2bin($m[2])) . '<e>[/url]</e>';

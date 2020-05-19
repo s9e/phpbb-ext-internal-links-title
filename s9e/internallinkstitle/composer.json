@@ -3,7 +3,7 @@
 	"type": "phpbb-extension",
 	"description": "Replaces internal links to topic titles.",
 	"homepage": "https://github.com/s9e/phpbb-ext-internal-links-title/",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"keywords": ["phpbb"],
 	"license": "MIT",
 	"require": {
