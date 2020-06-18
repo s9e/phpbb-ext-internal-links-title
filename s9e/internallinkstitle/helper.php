@@ -19,8 +19,8 @@ class helper
 	protected $db;
 	protected $postsTable;
 	protected $regexp;
+	protected static $titles = [];
 	protected $topicsTable;
-	protected $uniqid;
 
 	public function __construct(auth $auth, config $config, driver_interface $db, string $postsTable, string $topicsTable)
 	{
@@ -34,14 +34,20 @@ class helper
 
 		$this->postsTable  = $postsTable;
 		$this->topicsTable = $topicsTable;
-		$this->uniqid      = uniqid('');
 	}
 
 	public static function filterLinkText(string $text, self $helper): string
 	{
 		$title = $helper->getTitleByUrl($text);
+		if ($title === '')
+		{
+			return $text;
+		}
 
-		return ($title === '') ? $text : $helper->encode($title);
+		$uniqid = uniqid('');
+		self::$titles[$uniqid] = $title;
+
+		return $uniqid;
 	}
 
 	public function getFilter(): string
@@ -54,21 +60,23 @@ class helper
 		$parser->registeredVars['s9e.internallinkstitle.helper'] = $this;
 	}
 
-	public function replaceEncodedLinkText(string $xml): string
+	public function replaceInternalLinkTitles(string $xml): string
 	{
 		return preg_replace_callback(
-			'(<URL(?: [^=]++="[^"]*+")*? url="([^"]++)"[^>]*+>\\K<LINK_TEXT(?: [^=]++="[^"]*+")*? text="' . $this->uniqid . ':([0-9a-f]++)"[^>]*>[^<]++</LINK_TEXT>(?=</URL>))',
+			'(<URL(?: [^=]++="[^"]*+")*? url="([^"]++)"[^>]*+>\\K<LINK_TEXT(?: [^=]++="[^"]*+")*? text="([0-9a-f]++)"[^>]*>[^<]++</LINK_TEXT>(?=</URL>))',
 			function ($m)
 			{
-				return '<s>[url=' . $m[1] . ']</s>' . self::escape(hex2bin($m[2])) . '<e>[/url]</e>';
+				$url    = $m[1];
+				$uniqid = $m[2];
+				if (!isset(self::$titles[$uniqid]))
+				{
+					return $m[0];
+				}
+
+				return '<s>[url=' . $url . ']</s>' . self::escape(self::$titles[$uniqid]) . '<e>[/url]</e>';
 			},
 			$xml
 		);
-	}
-
-	protected function encode(string $text): string
-	{
-		return $this->uniqid . ':' . bin2hex($text);
 	}
 
 	protected static function escape(string $text): string

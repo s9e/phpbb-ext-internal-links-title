@@ -29,7 +29,7 @@ class listener implements EventSubscriberInterface
 
 	public function afterParse($event)
 	{
-		$event['xml'] = $this->helper->replaceEncodedLinkText($event['xml']);
+		$event['xml'] = $this->helper->replaceInternalLinkTitles($event['xml']);
 	}
 
 	public function onConfigure($event)
