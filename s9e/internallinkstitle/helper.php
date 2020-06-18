@@ -17,9 +17,9 @@ class helper
 {
 	protected $auth;
 	protected $db;
+	protected static $links = [];
 	protected $postsTable;
 	protected $regexp;
-	protected static $titles = [];
 	protected $topicsTable;
 
 	public function __construct(auth $auth, config $config, driver_interface $db, string $postsTable, string $topicsTable)
@@ -45,7 +45,7 @@ class helper
 		}
 
 		$uniqid = uniqid('');
-		self::$titles[$uniqid] = $title;
+		self::$links[$uniqid] = ['title' => $title, 'url' => $text];
 
 		return $uniqid;
 	}
@@ -63,17 +63,19 @@ class helper
 	public function replaceInternalLinkTitles(string $xml): string
 	{
 		return preg_replace_callback(
-			'(<URL(?: [^=]++="[^"]*+")*? url="([^"]++)"[^>]*+>\\K<LINK_TEXT(?: [^=]++="[^"]*+")*? text="([0-9a-f]++)"[^>]*>[^<]++</LINK_TEXT>(?=</URL>))',
+			'(<URL [^>]++>\\K(?:<s>[^<]++</s>)?<LINK_TEXT(?: [^=]++="[^"]*+")*? text="([0-9a-f]++)"[^>]*>[^<]++</LINK_TEXT>(?:<e>[^<]++</e>)?(?=</URL>))',
 			function ($m)
 			{
-				$url    = $m[1];
-				$uniqid = $m[2];
-				if (!isset(self::$titles[$uniqid]))
+				$uniqid = $m[1];
+				if (!isset(self::$links[$uniqid]))
 				{
 					return $m[0];
 				}
 
-				return '<s>[url=' . $url . ']</s>' . self::escape(self::$titles[$uniqid]) . '<e>[/url]</e>';
+				$url   = self::$links[$uniqid]['url'];
+				$title = self::$links[$uniqid]['title'];
+
+				return '<s>[url=' . $url . ']</s>' . self::escape($title) . '<e>[/url]</e>';
 			},
 			$xml
 		);
