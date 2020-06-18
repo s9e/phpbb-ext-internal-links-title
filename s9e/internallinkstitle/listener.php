@@ -45,6 +45,6 @@ class listener implements EventSubscriberInterface
 
 	public function onParserSetup($event)
 	{
-		$event['parser']->get_parser()->registeredVars['s9e.internallinkstitle.helper'] = $this->helper;
+		$this->helper->registerInstance($event['parser']->get_parser());
 	}
 }

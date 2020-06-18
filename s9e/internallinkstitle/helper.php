@@ -10,6 +10,7 @@ namespace s9e\internallinkstitle;
 use phpbb\auth\auth;
 use phpbb\config\config;
 use phpbb\db\driver\driver_interface;
+use s9e\TextFormatter\Parser;
 use s9e\TextFormatter\Utils;
 
 class helper
@@ -46,6 +47,11 @@ class helper
 	public function getFilter(): string
 	{
 		return __CLASS__ . '::filterLinkText($attrValue, $s9e.internallinkstitle.helper)';
+	}
+
+	public function registerInstance(Parser $parser)
+	{
+		$parser->registeredVars['s9e.internallinkstitle.helper'] = $this;
 	}
 
 	public function replaceEncodedLinkText(string $xml): string
